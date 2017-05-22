@@ -12,7 +12,7 @@
 ####################################################
 
 logPath=
-soplicy=
+sepolicy=
 tmpdir=
 tmpfile=
 services=
@@ -21,15 +21,15 @@ function createTmpDir(){
 		rm -rf tmpdir
 	fi
 	
-	if [ -d soplicy ];then
-		rm -rf soplicy
+	if [ -d sepolicy ];then
+		rm -rf sepolicy
 	fi
 
-	mkdir -p soplicy
+	mkdir -p sepolicy
 	mkdir -p tmpdir
 	tmpdir="tmpdir"
 	tmpfile="tmpdir/file"
-	soplicy="soplicy"
+	sepolicy="sepolicy"
 }
 
 function cleanTmpFiles(){
@@ -73,24 +73,24 @@ function addInitDomain(){
 				return -1
 		fi
 
-		mkdir -p $soplicy/$srv
+		mkdir -p $sepolicy/$srv
 		
 		echo -e "## Please copy the follow codes into \"init.rc\" ,and you should make sure the path is correct !\n"\
-						"\nservice $srv $srvPath" >>  $soplicy/$srv/init.rc
+						"\nservice $srv $srvPath" >>  $sepolicy/$srv/init.rc
 		
 		echo -e "## Please copy the follow sepolicies into \"$srv.te\"\n"\
 						"\ntype $srv, domain;"\
 						"\ntype ${srv}_exec, exec_type, file_type;\n"\
-						"\ninit_daemon_domain($srv)\n"\ >> $soplicy/$srv/$srv.te
+						"\ninit_daemon_domain($srv)\n"\ >> $sepolicy/$srv/$srv.te
 		if [ "x$allow" == "x" ];then
 				echo -e "\n## You should added the follow codes yourself,or get the running log again,"\
 								"\n## after added ahead codes."\
-								"\n# Ex: allow $srv ......;\n" >> $soplicy/$srv/$srv.te
+								"\n# Ex: allow $srv ......;\n" >> $sepolicy/$srv/$srv.te
 		else
-				echo -e "\n$allow" >> $soplicy/$srv/$srv.te
+				echo -e "\n$allow" >> $sepolicy/$srv/$srv.te
 		fi
 		echo -e "\n## Please copy the follow codes into \"file_contexts\" ,and you should make sure the path is correct !\n"\
-						"\n$srvPath u:object_r:${srv}_exec:s0" >> $soplicy/$srv/file_contexts
+						"\n$srvPath u:object_r:${srv}_exec:s0" >> $sepolicy/$srv/file_contexts
 }
 
 function addSbinDomain(){
@@ -100,22 +100,22 @@ function addSbinDomain(){
 				return -1
 		fi
 
-		mkdir -p $soplicy/$srv
+		mkdir -p $sepolicy/$srv
 		
 		echo -e "## Please copy the follow codes into \"init.rc\"\n"\
 						"\nservice $srv /sbin/$srv"\
 						"\n\tcritical    ## As you needed"\
 						"\n\tseclabel u:r:$srv:s0"\
-						"\n\toneshot   ## As you needed" >>  $soplicy/$srv/init.rc
+						"\n\toneshot   ## As you needed" >>  $sepolicy/$srv/init.rc
 		
 		echo -e "## Please copy the follow sepolicies into \"$srv.te\"\n"\
 						"\ntype $srv, domain;"\
 						"\n## You should added the follow codes yourself,or get the running log again,"\
 						"\n## after added ahead codes."\
-						"\n# Ex: allow $srv ......;\n" >> $soplicy/$srv/$srv.te
+						"\n# Ex: allow $srv ......;\n" >> $sepolicy/$srv/$srv.te
 
 		echo -e "## Please copy the follow sepolicies into \"init.te\"\n"\
-						"\ndomain_trans(init, rootfs, $srv)" >> $soplicy/$srv/init.te
+						"\ndomain_trans(init, rootfs, $srv)" >> $sepolicy/$srv/init.te
 }
 
 function echoHelpInfo(){
@@ -282,14 +282,14 @@ function serviceDeniedLog(){
 
 function writeSepolicyIntoFile(){
 		srv=$1
-		mkdir -p $soplicy/$srv/
+		mkdir -p $sepolicy/$srv/
 		grep "allow" ${tmpfile}-${srv}-aw | sort | uniq >> ${tmpfile}-${srv}-aw1
 		tts=`grep "allow" ${tmpfile}-${srv}-aw1 | awk -F " |;" '{print $3}' | sort | uniq`
-		echo -e "## Please copy this seploicies into \"$srv.te\" \n">> $soplicy/$srv/$srv.te
+		echo -e "## Please copy this seploicies into \"$srv.te\" \n">> $sepolicy/$srv/$srv.te
 		for tt in $tts
 		do
 				ops=`grep "allow" ${tmpfile}-${srv}-aw1 | gawk -F "($tt)|;" '{print $2}'| uniq`
-				echo "allow"" "$srv" "$tt" { "$ops" };" >> $soplicy/$srv/$srv.te
+				echo "allow"" "$srv" "$tt" { "$ops" };" >> $sepolicy/$srv/$srv.te
 		done
 }
 
